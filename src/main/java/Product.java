@@ -1,5 +1,7 @@
 import jdk.jfr.DataAmount;
 
+import java.util.Objects;
+
 public class Product {
     private String name;
     private double price;
@@ -33,6 +35,18 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return Double.compare(price, product.price) == 0 && amount == product.amount && Objects.equals(name, product.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, price, amount);
     }
 
     @Override

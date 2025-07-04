@@ -82,15 +82,59 @@ public class Cart {
     }
 
 
-    public void checkout() {
+    public void checkout(Customer customer, ShippingService shippingService) {
         if (cartItems.isEmpty()) {
             throw new IllegalArgumentException("Cart is empty");
         }
 
-        double subtotal = 0;
-        double shippingFee = 0;
+        double subtotal = calculateSubtotal();
+        double shippingFee = calculateShippingFee();
+        double total = subtotal + shippingFee;
 
+        // check for expired products
+        for (var item : cartItems.entrySet()) {
+            Product product = item.getKey();
 
+            if (product instanceof Expirable expirable && expirable.isExpired()) {
+                throw new IllegalStateException("Product " + product.getName() + " is expired");
+            }
+        }
+
+        if (customer.getBalance() < total) {
+            throw new IllegalStateException("Customer: " + customer.getName() +  "balance is insufficient");
+        }
+
+        Map<Shippable, Integer> shippableItems = new HashMap<>();
+        for (var item : cartItems.entrySet()) {
+            Product product = item.getKey();
+            Integer amount = item.getValue();
+
+            if (product instanceof Shippable shippable) {
+                shippableItems.put(shippable, amount);
+            }
+        }
+
+        if (!shippableItems.isEmpty()) {
+            shippingService.shipProducts(shippableItems);
+        }
+
+        customer.makePayment(total);
+
+        System.out.println("Checkout receipt");
+        for (var entry : cartItems.entrySet()) {
+            Product product = entry.getKey();
+            int amount = entry.getValue();
+            System.out.println(amount + "x " + product.getName() + " " + (product.getPrice() * amount));
+        }
+        System.out.println("----------------------");
+
+        System.out.println("Subtotal " + subtotal);
+        System.out.println("Shipping " + shippingFee);
+        System.out.println("Amount " + total);
+
+        System.out.println("Customer balance after payment: " + customer.getBalance());
+
+        cartItems.clear();
 
     }
 
